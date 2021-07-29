@@ -21,6 +21,15 @@
 .module JUMPTABLE
 .globl USB_AutoVector
 .globl USB_jump_table
+.globl T0_AutoVector
+
+;--------------------------------------------------------------------------;
+; Interrupt Vectors                                                        ;
+;--------------------------------------------------------------------------;
+.area   timer0_JT (ABS,OVR)   ; Absolute, Overlay
+.org    0xb                   ; timer 0 jumps here
+T0_AutoVector = #. + 2
+    ljmp  _timer0_isr
 
 ;--------------------------------------------------------------------------;
 ; Interrupt Vectors                                                        ;

@@ -30,7 +30,9 @@ void delay_5us(void) {
 void delay_1ms(void) {
   uint16_t i;
 
-  for (i = 0; i < 598; i++);
+  for (i = 0; i < 598; i++) {
+    NOP;
+  }
 }
 
 void delay_us(uint16_t delay) {

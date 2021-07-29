@@ -23,6 +23,7 @@
 #include "usb.h"
 #include "i2c.h"
 #include "commands.h"
+#include "delay.h"
 
 /**
  * Interrupt Vectors
@@ -88,20 +89,47 @@ static void io_init(void) {
 
   /* Port C: ... */
   PORTCCFG = PORTC_SPECIAL_FUNC;
-  OEC      = PORTC_OE;
+  OEC      = 2; //PORTC_OE;
   OUTC     = PORTC_INIT;
 
   /* Enable CLK24 output */
-  CPUCS |= CLK24OE;
+  // CPUCS |= CLK24OE;
 
   /* External Memory Interface Wait States for Fast Read */
   CKCON = 0x00;      // CKCON[2..0]: 0 wait states
+}
+
+int state = 0;
+
+
+void timer0_isr(void) __interrupt {
+  state = !state;
+
+  if (state) {
+    OUTC = 2;
+  } else {
+    OUTC = 0;
+  }
+}
+
+void timer0_init(uint16_t period) {
+  TMOD &= ~0x0F;
+  TMOD |= 0x01;
+
+  TH0=period >> 8;
+  TL0=period & 0xFF;
+
+  PT0 = 0;
+  ET0 = 1;
+
+  TR0 = 1;
 }
 
 int main(void) {
   io_init();
   usb_init();
   i2c_init();
+  timer0_init(0xFFFF);
 
   /* Globally enable interrupts */
   EA = 1;
