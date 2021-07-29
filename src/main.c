@@ -99,16 +99,14 @@ static void io_init(void) {
   CKCON = 0x00;      // CKCON[2..0]: 0 wait states
 }
 
-int state = 0;
-
+volatile int led_state = 0;
 
 void timer0_isr(void) __interrupt {
-  state = !state;
-
-  if (state) {
-    OUTC = 2;
-  } else {
+  if (led_state > 0) {
     OUTC = 0;
+    led_state--;
+  } else {
+    OUTC = 2;
   }
 }
 

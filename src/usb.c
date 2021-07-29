@@ -137,9 +137,9 @@ __code struct usb_language_descriptor language_descriptor = {
 
 /* String Descriptors */
 
-__code struct usb_string_descriptor strManufacturer  = STR_DESCR(13, 'J','o','h','a','n','n',' ','G','l','a','s','e','r');
+__code struct usb_string_descriptor strManufacturer  = STR_DESCR(14, 'J','a','n',' ','M','a','r','j','a','n','o','v','i','c');
 
-__code struct usb_string_descriptor strProduct       = STR_DESCR(15, 'E','Z','-','U','S','B',' ','F','i','r','m','w','a','r','e');
+__code struct usb_string_descriptor strProduct       = STR_DESCR(11, 'E','Z','-','U','S','B',' ','U','A','R','T');
 
 __code struct usb_string_descriptor strSerialNumber  = STR_DESCR( 6, '0','0','0','0','0','1');
 

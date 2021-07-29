@@ -31,6 +31,8 @@ volatile uint8_t  Command;
 volatile uint16_t CmdIndex;
 volatile uint16_t CmdValue;
 
+extern int led_state;
+
 /****************************************************************************/
 /***  GetVersion  ***********************************************************/
 /****************************************************************************/
@@ -164,7 +166,9 @@ void command_loop(void) {
     }
     // got an EP2 OUT interrupt?
     if (Semaphore_EP2_out) {
+      led_state = 10;
       // ... handle ...
+      OUT2BC = 0;
       Semaphore_EP2_out = false;
     }
   }
