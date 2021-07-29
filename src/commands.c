@@ -25,6 +25,7 @@
 #include "usb.h"
 #include "i2c.h"
 #include "io.h"
+#include "delay.h"
 
 // local copy of the information we got in the SETUPDAT packet
 volatile uint8_t  Command;
@@ -32,6 +33,9 @@ volatile uint16_t CmdIndex;
 volatile uint16_t CmdValue;
 
 extern int led_state;
+
+char text_buffer[32] = {0};
+uint32_t text_buffer_pos = 0;
 
 /****************************************************************************/
 /***  GetVersion  ***********************************************************/
@@ -109,6 +113,59 @@ void GetStatus() {
   IN0BC = sizeof(Status);
 }
 
+void setup_text_buffer() {
+  char* data = text_buffer;
+  uint32_t len = OUT2BC;
+  static int idx = 0;
+
+
+  char TEMP0[] = "received: index = ";
+  char TEMP1[] = ", IN2BC = ";
+  char TEMP2[] = "\n";
+  uint8_t b = 0;
+
+  for (int i = 0; i < sizeof(TEMP0)-1; i++) {
+    *data++ = TEMP0[i];
+    b++;
+  }
+
+  *data++ = (idx / 10) + '0';
+  *data++ = (idx % 10) + '0';
+  b += 2;
+
+  for (int i = 0; i < sizeof(TEMP1)-1; i++) {
+    *data++ = TEMP1[i];
+    b++;
+  }
+
+  *data++ = (len / 10) + '0';
+  *data++ = (len % 10) + '0';
+  b += 2;
+
+  for (int i = 0; i < sizeof(TEMP2)-1; i++) {
+    *data++ = TEMP2[i];
+    b++;
+  }
+  *data = 0;
+  idx++;
+}
+
+void GetBuffer() {
+  uint8_t b;
+  char* Src;
+  char* Dst;
+
+  Src = text_buffer;
+  Dst = OUT2BUF;
+  b = 0;
+  while (*Src) {
+    *Dst++ = *Src++;
+    b++;
+  }
+
+  IN2BC = b;
+}
+
 /****************************************************************************/
 /***  Command Handler  ******************************************************/
 /****************************************************************************/
@@ -151,7 +208,7 @@ void HandleCmd() {
  */
 void command_loop(void) {
   // arm EP2OUT for the first time so we are ready for JTAG commands
-  OUT2BC = 0;
+  //OUT2BC = 0;
   // command loop
   while (true) {
     // got a command packet?
@@ -166,8 +223,10 @@ void command_loop(void) {
     }
     // got an EP2 OUT interrupt?
     if (Semaphore_EP2_out) {
-      led_state = 10;
       // ... handle ...
+      setup_text_buffer();
+      GetBuffer();
+      led_state = 10;
       OUT2BC = 0;
       Semaphore_EP2_out = false;
     }

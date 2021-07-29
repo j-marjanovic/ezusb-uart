@@ -29,6 +29,9 @@
 #define CMD_GET_VERSION          0x80
 #define CMD_GET_VERSION_STRING   0x81
 #define CMD_GET_STATUS           0x82
+
+#define CMD_SET_BUFFER           0x85
+#define CMD_GET_BUFFER           0x86
 // ... add further commands here and handlers in HandleCmd() in commands.c ...
 // 0xA0 .. 0xAF are reserved by Anchor / Cypress
 
