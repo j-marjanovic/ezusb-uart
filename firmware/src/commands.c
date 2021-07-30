@@ -113,25 +113,59 @@ void GetStatus() {
   IN0BC = sizeof(Status);
 }
 
-void setup_text_buffer() {
+int idx = 0;
+
+void GetBuffer() {
+  uint8_t b;
+  char* Src;
+  char* Dst;
+
+  Src = text_buffer;
+  Dst = IN2BUF;
+  b = 0;
+  while (*Src) {
+    *Dst++ = *Src++;
+    b++;
+  }
+
+  IN2BC = b;
+}
+
+void SetBuffer() {
+  char* Src = OUT2BUF;
   char* data = text_buffer;
-  uint32_t len = OUT2BC;
-  static int idx = 0;
+  uint8_t digit;
 
+  if (OUT2BC <= 0) {
+    return;
+  }
 
-  char TEMP0[] = "received: index = ";
-  char TEMP1[] = ", IN2BC = ";
+  uint8_t cmd = *Src++;
+  uint8_t len = *Src++;
+
+  char TEMP0[] = "SetBuffer: cmd = ";
+  char TEMP1[] = ", len = ";
   char TEMP2[] = "\n";
   uint8_t b = 0;
+
+  idx++;
 
   for (int i = 0; i < sizeof(TEMP0)-1; i++) {
     *data++ = TEMP0[i];
     b++;
   }
 
-  *data++ = (idx / 10) + '0';
-  *data++ = (idx % 10) + '0';
-  b += 2;
+  digit = cmd / 100;
+  cmd -= digit*100;
+  *data++ = digit + '0';
+
+  digit = cmd / 10;
+  cmd -= digit*10;
+  *data++ = digit + '0';
+
+  digit = cmd;
+  *data++ = digit + '0';
+  b += 3;
 
   for (int i = 0; i < sizeof(TEMP1)-1; i++) {
     *data++ = TEMP1[i];
@@ -147,23 +181,6 @@ void setup_text_buffer() {
     b++;
   }
   *data = 0;
-  idx++;
-}
-
-void GetBuffer() {
-  uint8_t b;
-  char* Src;
-  char* Dst;
-
-  Src = text_buffer;
-  Dst = OUT2BUF;
-  b = 0;
-  while (*Src) {
-    *Dst++ = *Src++;
-    b++;
-  }
-
-  IN2BC = b;
 }
 
 /****************************************************************************/
@@ -200,6 +217,20 @@ void HandleCmd() {
   }
 }
 
+void HandleOut() {
+  uint8_t cmd = *(uint8_t*)OUT2BUF;
+
+  switch (cmd) {
+    case 0xd0: 
+      SetBuffer();
+      break;
+    case 0xd1:
+      GetBuffer();
+      break;
+  }
+  OUT2BC = 0;
+}
+
 /**
  * Main command loop
  *
@@ -223,11 +254,8 @@ void command_loop(void) {
     }
     // got an EP2 OUT interrupt?
     if (Semaphore_EP2_out) {
-      // ... handle ...
-      setup_text_buffer();
-      GetBuffer();
       led_state = 10;
-      OUT2BC = 0;
+      HandleOut();
       Semaphore_EP2_out = false;
     }
   }

@@ -135,12 +135,20 @@ int main(int argc, char **argv) {
   printf("status = %d, version = %s\n", status, rBuf);
 
   uint32_t transferred;
-  status = libusb_bulk_transfer(device, LIBUSB_ENDPOINT_OUT | 2, rBuf, 128,
+  rBuf[0] = 0xd0;
+  rBuf[1] = 0x12;
+  status = libusb_bulk_transfer(device, LIBUSB_ENDPOINT_OUT | 2, rBuf, 64,
                                 &transferred, 1000);
   printf("status = %d (%s), transferred = %d\n", status,
          libusb_error_name(status), transferred);
 
-  status = libusb_bulk_transfer(device, LIBUSB_ENDPOINT_IN | 2, rBuf, 128,
+  rBuf[0] = 0xd1;
+  status = libusb_bulk_transfer(device, LIBUSB_ENDPOINT_OUT | 2, rBuf, 64,
+                                &transferred, 1000);
+  printf("status = %d (%s), transferred = %d\n", status,
+         libusb_error_name(status), transferred);
+
+  status = libusb_bulk_transfer(device, LIBUSB_ENDPOINT_IN | 2, rBuf, 64,
                                 &transferred, 1000);
   printf("status = %d (%s), transferred = %d\n", status,
          libusb_error_name(status), transferred);
