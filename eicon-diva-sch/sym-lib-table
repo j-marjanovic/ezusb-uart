@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name eicon-diva-sch)(type Legacy)(uri ${KIPRJMOD}/eicon-diva-sch.lib)(options "")(descr ""))
+)
