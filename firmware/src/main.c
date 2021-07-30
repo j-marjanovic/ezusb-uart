@@ -100,8 +100,6 @@ static void io_init(void) {
 }
 
 volatile uint8_t led_state = 0;
-volatile uint8_t prescaler = 0;
-volatile char out_buf = 'a';
 
 void timer0_isr(void) __interrupt {
 
@@ -110,12 +108,6 @@ void timer0_isr(void) __interrupt {
     led_state--;
   } else {
     OUTC = 1 << 6;
-  }
-
-  if (prescaler++ > 30) {
-    prescaler = 0;
-    led_state = 10;
-    SBUF0 = out_buf++;
   }
 }
 

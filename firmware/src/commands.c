@@ -34,9 +34,6 @@ volatile uint16_t CmdValue;
 
 extern int led_state;
 
-char text_buffer[32] = {0};
-uint32_t text_buffer_pos = 0;
-
 /****************************************************************************/
 /***  GetVersion  ***********************************************************/
 /****************************************************************************/
@@ -115,12 +112,17 @@ void GetStatus() {
 
 int idx = 0;
 
+uint8_t uart_tx_data_size;
+uint8_t uart_tx_data_pos;
+uint8_t uart_tx_data[64];
+uint8_t uart_tx_active;
+
 void GetBuffer() {
   uint8_t b;
   char* Src;
   char* Dst;
 
-  Src = text_buffer;
+  Src = uart_tx_data; // TODO
   Dst = IN2BUF;
   b = 0;
   while (*Src) {
@@ -133,8 +135,7 @@ void GetBuffer() {
 
 void SetBuffer() {
   char* Src = OUT2BUF;
-  char* data = text_buffer;
-  uint8_t digit;
+  char* data = uart_tx_data;
 
   if (OUT2BC <= 0) {
     return;
@@ -143,44 +144,16 @@ void SetBuffer() {
   uint8_t cmd = *Src++;
   uint8_t len = *Src++;
 
-  char TEMP0[] = "SetBuffer: cmd = ";
-  char TEMP1[] = ", len = ";
-  char TEMP2[] = "\n";
-  uint8_t b = 0;
+  if (cmd == 0xd0) {
+    led_state = 10;
+    for (int i = 0; i < len; i++){
+      *data++ = *Src++;
+    }
 
-  idx++;
-
-  for (int i = 0; i < sizeof(TEMP0)-1; i++) {
-    *data++ = TEMP0[i];
-    b++;
+    uart_tx_data_size = len;
+    uart_tx_data_pos = 0;
   }
 
-  digit = cmd / 100;
-  cmd -= digit*100;
-  *data++ = digit + '0';
-
-  digit = cmd / 10;
-  cmd -= digit*10;
-  *data++ = digit + '0';
-
-  digit = cmd;
-  *data++ = digit + '0';
-  b += 3;
-
-  for (int i = 0; i < sizeof(TEMP1)-1; i++) {
-    *data++ = TEMP1[i];
-    b++;
-  }
-
-  *data++ = (len / 10) + '0';
-  *data++ = (len % 10) + '0';
-  b += 2;
-
-  for (int i = 0; i < sizeof(TEMP2)-1; i++) {
-    *data++ = TEMP2[i];
-    b++;
-  }
-  *data = 0;
 }
 
 /****************************************************************************/
@@ -257,6 +230,16 @@ void command_loop(void) {
       led_state = 10;
       HandleOut();
       Semaphore_EP2_out = false;
+    }
+    if ((uart_tx_data_size > 0) && ((!uart_tx_active) || (uart_tx_active && TI_0))) {
+      SBUF0 = uart_tx_data[uart_tx_data_pos];
+      uart_tx_data_pos++;
+      uart_tx_data_size--;
+      uart_tx_active = 1;
+      TI_0 = 0;
+    }
+    if ((uart_tx_data_size == 0) && uart_tx_active && TI_0) {
+      uart_tx_active;
     }
   }
 }
