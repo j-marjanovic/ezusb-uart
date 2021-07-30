@@ -19,11 +19,11 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "io.h"
-#include "usb.h"
-#include "i2c.h"
 #include "commands.h"
 #include "delay.h"
+#include "i2c.h"
+#include "io.h"
+#include "usb.h"
 
 /**
  * Interrupt Vectors
@@ -45,30 +45,30 @@
  * ISR vector (here 13) to "reserve" that space.
  */
 // I2C
-//extern void i2c_isr(void)      __interrupt I2C_VECTOR;
+// extern void i2c_isr(void)      __interrupt I2C_VECTOR;
 // USB
-extern void sudav_isr(void)    __interrupt SUDAV_ISR;
-extern void sof_isr(void)      __interrupt;
-extern void sutok_isr(void)    __interrupt;
-extern void suspend_isr(void)  __interrupt;
+extern void sudav_isr(void) __interrupt SUDAV_ISR;
+extern void sof_isr(void) __interrupt;
+extern void sutok_isr(void) __interrupt;
+extern void suspend_isr(void) __interrupt;
 extern void usbreset_isr(void) __interrupt;
-extern void ibn_isr(void)      __interrupt;
-extern void ep0in_isr(void)    __interrupt;
-extern void ep0out_isr(void)   __interrupt;
-extern void ep1in_isr(void)    __interrupt;
-extern void ep1out_isr(void)   __interrupt;
-extern void ep2in_isr(void)    __interrupt;
-extern void ep2out_isr(void)   __interrupt;
-extern void ep3in_isr(void)    __interrupt;
-extern void ep3out_isr(void)   __interrupt;
-extern void ep4in_isr(void)    __interrupt;
-extern void ep4out_isr(void)   __interrupt;
-extern void ep5in_isr(void)    __interrupt;
-extern void ep5out_isr(void)   __interrupt;
-extern void ep6in_isr(void)    __interrupt;
-extern void ep6out_isr(void)   __interrupt;
-extern void ep7in_isr(void)    __interrupt;
-extern void ep7out_isr(void)   __interrupt;
+extern void ibn_isr(void) __interrupt;
+extern void ep0in_isr(void) __interrupt;
+extern void ep0out_isr(void) __interrupt;
+extern void ep1in_isr(void) __interrupt;
+extern void ep1out_isr(void) __interrupt;
+extern void ep2in_isr(void) __interrupt;
+extern void ep2out_isr(void) __interrupt;
+extern void ep3in_isr(void) __interrupt;
+extern void ep3out_isr(void) __interrupt;
+extern void ep4in_isr(void) __interrupt;
+extern void ep4out_isr(void) __interrupt;
+extern void ep5in_isr(void) __interrupt;
+extern void ep5out_isr(void) __interrupt;
+extern void ep6in_isr(void) __interrupt;
+extern void ep6out_isr(void) __interrupt;
+extern void ep7in_isr(void) __interrupt;
+extern void ep7out_isr(void) __interrupt;
 
 static void io_init(void) {
   /* PORTxCFG register bits select alternate functions (1 == alternate function,
@@ -79,34 +79,43 @@ static void io_init(void) {
 
   /* Port A: ... */
   PORTACFG = PORTA_SPECIAL_FUNC;
-  OEA      = PORTA_OE;
-  OUTA     = PORTA_INIT;
+  OEA = PORTA_OE;
+  OUTA = PORTA_INIT;
 
   /* Port B: ... */
   PORTBCFG = PORTB_SPECIAL_FUNC;
-  OEB      = PORTB_OE;
-  OUTB     = PORTB_INIT;
+  OEB = PORTB_OE;
+  OUTB = PORTB_INIT;
 
   /* Port C: ... */
-  PORTCCFG = PORTC_SPECIAL_FUNC;
-  OEC      = 2; //PORTC_OE;
-  OUTC     = PORTC_INIT;
+  PORTCCFG = RXD0 | TXD0;
+  OEC = 1 << 6; // PORTC_OE;
+  OUTC = 0;
 
   /* Enable CLK24 output */
   // CPUCS |= CLK24OE;
 
-  /* External Memory Interface Wait States for Fast Read */
-  CKCON = 0x00;      // CKCON[2..0]: 0 wait states
+  // clock control
+  CKCON = T1M;
 }
 
-volatile int led_state = 0;
+volatile uint8_t led_state = 0;
+volatile uint8_t prescaler = 0;
+volatile char out_buf = 'a';
 
 void timer0_isr(void) __interrupt {
+
   if (led_state > 0) {
     OUTC = 0;
     led_state--;
   } else {
-    OUTC = 2;
+    OUTC = 1 << 6;
+  }
+
+  if (prescaler++ > 30) {
+    prescaler = 0;
+    led_state = 10;
+    SBUF0 = out_buf++;
   }
 }
 
@@ -114,8 +123,8 @@ void timer0_init(uint16_t period) {
   TMOD &= ~0x0F;
   TMOD |= 0x01;
 
-  TH0=period >> 8;
-  TL0=period & 0xFF;
+  TH0 = period >> 8;
+  TL0 = period & 0xFF;
 
   PT0 = 0;
   ET0 = 1;
@@ -123,11 +132,33 @@ void timer0_init(uint16_t period) {
   TR0 = 1;
 }
 
+void timer1_init(uint8_t period) {
+  TMOD &= ~0xF0;
+  TMOD |= 0x20;
+
+  TH1 = period;
+  TL1 = 0;
+
+  TR1 = 1;
+  T2CON = 0;
+}
+
+// asumes SMOD0 = 1 (double baud rate), T1M = 1 (24 MHz / 4)s
+#define BAUD_RATE_9600 (0xd9)
+
+void uart_init() {
+  // SCON register
+  SM1_0 = 1;
+  PCON |= SMOD0;
+}
+
 int main(void) {
   io_init();
   usb_init();
   i2c_init();
-  timer0_init(0xFFFF);
+  timer0_init(0);
+  timer1_init(BAUD_RATE_9600);
+  uart_init();
 
   /* Globally enable interrupts */
   EA = 1;
