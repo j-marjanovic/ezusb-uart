@@ -110,12 +110,13 @@ void GetStatus() {
   IN0BC = sizeof(Status);
 }
 
-int idx = 0;
+volatile uint8_t uart_tx_data_size;
+volatile uint8_t uart_tx_data_pos;
+volatile uint8_t uart_tx_data[32];
+volatile uint8_t uart_tx_active;
 
-uint8_t uart_tx_data_size;
-uint8_t uart_tx_data_pos;
-uint8_t uart_tx_data[64];
-uint8_t uart_tx_active;
+volatile uint8_t uart_rx_data_size;
+volatile uint8_t uart_rx_data[32];
 
 void GetBuffer() {
   uint8_t b;
@@ -125,10 +126,16 @@ void GetBuffer() {
   Src = uart_tx_data; // TODO
   Dst = IN2BUF;
   b = 0;
-  while (*Src) {
-    *Dst++ = *Src++;
+
+  *Dst++ = uart_rx_data_size;
+  b++;
+
+  for (uint8_t i = 0; i < uart_rx_data_size; i++) {
+    *Dst++ = uart_rx_data[i];
     b++;
   }
+
+  uart_rx_data_size = 0;
 
   IN2BC = b;
 }
@@ -145,8 +152,7 @@ void SetBuffer() {
   uint8_t len = *Src++;
 
   if (cmd == 0xd0) {
-    led_state = 10;
-    for (int i = 0; i < len; i++){
+    for (uint8_t i = 0; i < len; i++){
       *data++ = *Src++;
     }
 
@@ -227,10 +233,12 @@ void command_loop(void) {
     }
     // got an EP2 OUT interrupt?
     if (Semaphore_EP2_out) {
-      led_state = 10;
+      // led_state = 10;
       HandleOut();
       Semaphore_EP2_out = false;
     }
+
+    // UART TX
     if ((uart_tx_data_size > 0) && ((!uart_tx_active) || (uart_tx_active && TI_0))) {
       SBUF0 = uart_tx_data[uart_tx_data_pos];
       uart_tx_data_pos++;
@@ -240,6 +248,16 @@ void command_loop(void) {
     }
     if ((uart_tx_data_size == 0) && uart_tx_active && TI_0) {
       uart_tx_active;
+    }
+
+    // UART RX
+    if (RI_0) {
+      led_state = 10;
+      if (uart_rx_data_size < sizeof(uart_rx_data)) {
+        uart_rx_data[uart_rx_data_size] = SBUF0;
+        uart_rx_data_size++;
+      }
+      RI_0 = 0;
     }
   }
 }

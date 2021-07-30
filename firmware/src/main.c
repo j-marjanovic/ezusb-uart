@@ -141,6 +141,8 @@ void timer1_init(uint8_t period) {
 void uart_init() {
   // SCON register
   SM1_0 = 1;
+  REN_0 = 1;
+
   PCON |= SMOD0;
 }
 
