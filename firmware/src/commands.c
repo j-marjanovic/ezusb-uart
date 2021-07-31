@@ -61,7 +61,7 @@ void GetVersion() {
 /***  GetVersionString  *****************************************************/
 /****************************************************************************/
 
-const char __code const * VersionString = "EZ-USB Firmware 0.1";
+const char __code const * VersionString = "EZ-USB UART version 1.0";
 
 /**
  * Command: GetVersionString
