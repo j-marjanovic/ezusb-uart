@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
       for (int i = 0; i < rx_size; i++) {
         putchar(rx_buf[i]);
         if (rx_buf[i] == '\r') {
-          putchar('\n');
+          // putchar('\n');
         }
       }
       fflush(stdout);
@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
     // transmit the data
     if ((ch == '\r') || (tx_buf_pos == sizeof(tx_buf) - 1)) {
       if (ch == '\r') {
+        tx_buf[tx_buf_pos++] = '\n';
         printf("\r\n");
       }
       ezusb_uart_send_buffer(device, tx_buf, tx_buf_pos);

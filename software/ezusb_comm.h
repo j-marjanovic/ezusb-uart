@@ -147,11 +147,13 @@ int ezusb_uart_recv_buffer(libusb_device_handle *device, unsigned char *rx_buf,
     debug_print("  recv size = %d\n", *recv_size);
   }
 
-  debug_print("  data = ");
-  for (int i = 0; i < transferred; i++) {
-    debug_print("%02x ", tmp_buf[i]);
+  if (ezusb_verbose > 1) {
+    debug_print("  data = ");
+    for (int i = 0; i < transferred; i++) {
+      debug_print("%02x ", tmp_buf[i]);
+    }
+    debug_print("\n");
   }
-  debug_print("\n");
 
   memcpy(rx_buf, tmp_buf + 1, *recv_size);
 
