@@ -9,18 +9,19 @@
 #include "libusb-1.0/libusb.h"
 
 #include "ezusb_comm.h"
+#include "terminal_mgmt.h"
 
 int main(int argc, char **argv) {
 
   if (argc != 2) {
-    printf("Usage: %s bus,dev\n", argv[0]);
+    fprintf(stderr, "Usage: %s bus,dev\n", argv[0]);
     return EXIT_FAILURE;
   }
 
   unsigned busnum = 0, devaddr = 0;
 
   if (sscanf(argv[1], "%u,%u", &busnum, &devaddr) != 2) {
-    printf("Usage: %s bus,dev\n", argv[0]);
+    fprintf(stderr, "Usage: %s bus,dev\n", argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -29,20 +30,57 @@ int main(int argc, char **argv) {
   assert(device);
   assert(status == 0);
 
-  unsigned char rx_buf[64] = {0};
-
-  // TODO: 0x81
-  if ((status = ezusb_cmd_read(device, "read version", 0x81, 0x7F00, rx_buf,
-                               sizeof(rx_buf)) < 0)) {
-    printf("[ERROR] Could not get the version\n");
+  unsigned char verion_buf[64] = {0};
+  if ((status = ezusb_cmd_read(device, "read version", EZUSB_CMD_GET_VERSION,
+                               0x7F00, verion_buf, sizeof(verion_buf)) < 0)) {
+    fprintf(stderr, "[ERROR] Could not get the version\n");
   }
-  printf("status = %d, version = %s\n", status, rx_buf);
+  fprintf(stderr, "version = %s\n", verion_buf);
 
-  ezusb_uart_send_buffer(device, "Hello", 5);
+  set_conio_terminal_mode();
 
-  memset(rx_buf, 0, sizeof(rx_buf));
-  int recv_size;
-  ezusb_uart_recv_buffer(device, rx_buf, sizeof(rx_buf), &recv_size);
+  char tx_buf[32];
+  int tx_buf_pos = 0;
+  char rx_buf[32];
+  int rx_size;
+
+  while (1) {
+    while (!kbhit()) {
+      // check for received data
+      memset(rx_buf, 0, sizeof(rx_buf));
+      ezusb_uart_recv_buffer(device, rx_buf, sizeof(rx_buf), &rx_size);
+
+      if (rx_size > 0) {
+        printf("%s\n", rx_buf);
+      }
+      fflush(stdout);
+    }
+
+    // get character from the terminal
+    char ch = getch();
+
+    // echo
+    putchar(ch);
+    fflush(stdout);
+
+    // Ctrl+C and Ctrl+D handling
+    if ((ch == 0x3) || (ch == 0x4)) {
+      goto close;
+    }
+
+    // append to tx buffer
+    tx_buf[tx_buf_pos++] = ch;
+
+    // transmit the data
+    if ((ch == 0xd) || (tx_buf_pos == sizeof(tx_buf) - 1)) {
+      if (ch == 0xd) {
+        printf("\r\n");
+      }
+      ezusb_uart_send_buffer(device, tx_buf, tx_buf_pos);
+      memset(tx_buf, 0, sizeof(tx_buf));
+      tx_buf_pos = 0;
+    }
+  }
 
 close:
   ezusb_close(device);
