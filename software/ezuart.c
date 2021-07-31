@@ -35,7 +35,9 @@ int main(int argc, char **argv) {
                                0x7F00, verion_buf, sizeof(verion_buf)) < 0)) {
     fprintf(stderr, "[ERROR] Could not get the version\n");
   }
-  fprintf(stderr, "version = %s\n", verion_buf);
+  printf("EZ-USB UART\n");
+  printf("firmware version = %s\n", verion_buf);
+  printf("press Ctrl-D to exit\n");
 
   set_conio_terminal_mode();
 
