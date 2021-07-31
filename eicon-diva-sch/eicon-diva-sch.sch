@@ -36,10 +36,10 @@ F 3 "" H 3500 3050 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L Connector:USB_B J?
+L Connector:USB_B JP101
 U 1 1 61046281
 P 2400 1950
-F 0 "J?" H 2457 2417 50  0000 C CNN
+F 0 "JP101" H 2457 2417 50  0000 C CNN
 F 1 "USB_B" H 2457 2326 50  0000 C CNN
 F 2 "" H 2550 1900 50  0001 C CNN
 F 3 " ~" H 2550 1900 50  0001 C CNN
@@ -696,9 +696,7 @@ F 3 "" H 4850 1550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	4850 2200 4850 2350
-Wire Wire Line
-	4950 2200 4950 2650
+	4950 2200 4950 2350
 Wire Wire Line
 	5050 2200 5050 2450
 $Comp
@@ -725,11 +723,6 @@ Wire Wire Line
 	6250 1800 6000 1800
 Wire Wire Line
 	6000 1800 6000 2350
-Wire Wire Line
-	6000 2350 4850 2350
-Connection ~ 4850 2350
-Wire Wire Line
-	4850 2350 4850 2650
 $Comp
 L power:+3.3V #PWR?
 U 1 1 611C843F
@@ -823,4 +816,11 @@ Wire Notes Line
 	3500 2300 2700 2300
 Text Notes 2800 2850 0    50   ~ 0
 U104
+Wire Wire Line
+	4850 2200 4850 2650
+Wire Wire Line
+	6000 2350 4950 2350
+Connection ~ 4950 2350
+Wire Wire Line
+	4950 2350 4950 2650
 $EndSCHEMATC
