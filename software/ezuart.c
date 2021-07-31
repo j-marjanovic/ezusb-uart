@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 
   char tx_buf[32];
   int tx_buf_pos = 0;
-  char rx_buf[32];
+  unsigned char rx_buf[32];
   int rx_size;
 
   while (1) {
@@ -52,8 +52,11 @@ int main(int argc, char **argv) {
       memset(rx_buf, 0, sizeof(rx_buf));
       ezusb_uart_recv_buffer(device, rx_buf, sizeof(rx_buf), &rx_size);
 
-      if (rx_size > 0) {
-        printf("%s\n", rx_buf);
+      for (int i = 0; i < rx_size; i++) {
+        putchar(rx_buf[i]);
+        if (rx_buf[i] == '\r') {
+          putchar('\n');
+        }
       }
       fflush(stdout);
     }
@@ -74,8 +77,8 @@ int main(int argc, char **argv) {
     tx_buf[tx_buf_pos++] = ch;
 
     // transmit the data
-    if ((ch == 0xd) || (tx_buf_pos == sizeof(tx_buf) - 1)) {
-      if (ch == 0xd) {
+    if ((ch == '\r') || (tx_buf_pos == sizeof(tx_buf) - 1)) {
+      if (ch == '\r') {
         printf("\r\n");
       }
       ezusb_uart_send_buffer(device, tx_buf, tx_buf_pos);

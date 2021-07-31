@@ -25,7 +25,7 @@ void set_conio_terminal_mode() {
 }
 
 int kbhit() {
-  struct timeval tv = {1L, 0L}; ////0L, 100000L};
+  struct timeval tv = {0L, 100L}; // 100 us
   fd_set fds;
   FD_ZERO(&fds);
   FD_SET(0, &fds);
